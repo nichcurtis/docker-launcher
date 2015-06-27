@@ -1,0 +1,44 @@
+{
+  "name": "docker-launcher",
+  "version": "0.1.0",
+  "description": "Node cli application for launching docker containers.",
+  "main": "index.js",
+  "dependencies": {
+    "bluebird": "^2.9.24",
+    "command-line-args": "^0.5.9",
+    "lodash": "^3.7.0",
+    "shelljs": "^0.5.1",
+    "shelljs-nodecli": "^0.1.1",
+    "sleep": "^2.0.0"
+  },
+  "devDependencies": {
+    "gulp": "^3.8.11",
+    "gulp-eslint": "^0.11.1",
+    "gulp-istanbul": "^0.8.1",
+    "gulp-lintspaces": "^0.2.3",
+    "gulp-load-plugins": "^0.10.0",
+    "gulp-mocha": "^2.0.1",
+    "gulp-util": "^3.0.4",
+    "ua-lintrc": "^1.0.3"
+  },
+  "scripts": {
+    "start": "node ./",
+    "test": "node node_modules/gulp/bin/gulp.js test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:22u/docker-launcher.git"
+  },
+  "keywords": [
+    "platform",
+    "service",
+    "shipping"
+  ],
+  "author": "Nicholas Curtis (22u, llc)",
+  "license": "Private",
+  "private": true,
+  "preferGlobal": true,
+  "bin": {
+    "dl": "index.js"
+  }
+}
