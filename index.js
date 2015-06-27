@@ -1,53 +1,135 @@
 #! /usr/bin/env node
+'use strict';
 
+var Promise = require('bluebird');
+var path = require('path');
 var _ = require('lodash');
-var cliArgs = require("command-line-args");
+var cliArgs = require('command-line-args');
 var shell = require('shelljs');
+var fs = Promise.promisifyAll(require('fs'));
 
-// verify dependencies
-if (!shell.which('git')) {
-  console.log('Sorry, this script requires git');
-  exit(1);
-}
-
-if (!shell.which('docker')) {
-  console.log('Sorry, this script requires docker');
-  exit(1);
-}
+var Container = require('./lib/container');
 
 /* define the command-line options */
 var cli = cliArgs([
-    { name: "launch", type: String, alias: "l", description: "Launch a container. Requires -s flag." },
-	{ name: "service", type: String, alias: "s", description: "Name of service to deploy." },
-	{ name: "volume", type: String, alias: "v", description: "Override service configuration value for volume." },
-    { name: "help", type: Boolean, description: "Print usage instructions" }
+	{name: 'launch', type: Boolean, alias: 'l', description: 'Launch a container. Requires -s flag.'},
+	{name: 'service', type: String, alias: 's', description: 'Name of service to deploy.'},
+	{name: 'volume', type: String, alias: 'v', description: 'Override service configuration value for volume.'},
+	{name: 'silent', type: Boolean, alias: 'q', description: 'Suppress logging'},
+	{name: 'config', type: String, alias: 'c', description: 'Set docker launcher service config dir.'},
+	{name: 'help', type: Boolean, description: 'Print usage instructions'}
 ]);
 
-/* parse the supplied command-line values */
-var options = cli.parse();
 /* generate a usage guide */
 var usage = cli.getUsage({
-    header: "Launch docker containers from configurable json files.",
-    footer: "For more information, visit http://docker-launch.22u.io"
+    header: 'Launch docker containers from configurable json files.',
+    footer: 'For more information, visit http://docker-launch.22u.io'
 });
 
-// load json configuration file for service
-var serviceConfigFile = './services/'+options.service+'.json';
-var serviceConfig = require(serviceConfigFile);
+/* parse the supplied command-line values */
+try {
+	var cliOptions = cli.parse();
+} catch (err) {
+	console.log(err);
+	console.log(usage);
+	shell.exit(1);
+}
 
-// merge override options with service container config
-var containerConfig = _.merge(serviceConfig.container, {
-	volume: options.volume
-});
+// verify dependencies
+if (!shell.which('git')) {
+	console.log('Sorry, this script requires git');
+	shell.exit(1);
+}
 
-// create container instance for service container
-var Container = require('./lib/container')
-var ServiceContainer = new Container(containerConfig);
+if (!shell.which('docker')) {
+	console.log('Sorry, this script requires docker');
+	shell.exit(1);
+}
 
-// load all serviec container dependencies
-ServiceContainer.set('dependencies', serviceConfig.dependencies);
-ServiceContainer.loadDependencies();
+if (cliOptions.help) {
+	console.log(usage);
+	shell.exit(1);
+} else {
+	if (cliOptions.launch) {
+		if (!cliOptions.service) {
+			cliOptions.service = path.basename(shell.exec('pwd', {silent: true}).output.trim());
+		}
+	} else {
+		console.log(usage);
+		shell.exit(1);
+	}
+}
 
-// echo start command for service container
-var startCmd = ServiceContainer.start();
-console.log(startCmd);
+var configDir;
+if (cliOptions.config) {
+	configDir = cliOptions.config;
+} else {
+	configDir = path.join(__dirname, 'services');
+}
+setup();
+
+function setup() {
+	return fs.readdirAsync(configDir)
+		.then(loadConfigFromFiles)
+		.then(launchServiceFromConfig)
+		.then(function (serviceStartCommand) {
+			shell.echo(serviceStartCommand);
+			shell.exit(0);
+		});
+}
+
+function isJSONFile(file) {
+	if (file.substr(-5) === '.json') {
+		return true;
+	}
+	return false;
+}
+
+function loadConfigFromFiles(files) {
+	return Promise.filter(files, isJSONFile)
+		.map(function (file) {
+			// load container json
+			var serviceConfig = require(configDir + '/' + file);
+
+			// merge override options with service container config
+			serviceConfig.container = _.defaults({
+				dependencyDir : path.join(configDir, 'dependencies'),
+				volume        : cliOptions.volume,
+				silent        : cliOptions.silent === true ? cliOptions.silent : false
+			}, serviceConfig.container);
+
+			// return modified config objectl
+			return serviceConfig;
+		});
+}
+
+function launchServiceFromConfig(serviceConfigObjects) {
+	var serviceConfig = _.where(serviceConfigObjects, {'name': cliOptions.service.trim()});
+
+	if (!serviceConfig || serviceConfig.length <= 0) {
+		serviceConfig = _.where(serviceConfigObjects, {'alias': cliOptions.service.trim()});
+
+		if (!serviceConfig || serviceConfig.length <= 0) {
+			console.log('Can not find configuration file for service: ' + cliOptions.service);
+			shell.exit(1);
+		}
+	}
+
+	if (serviceConfig.length > 1) {
+		console.log('Multiple services matching name: ', _.pluck(serviceConfig, 'name'));
+		shell.exit(1);
+	}
+
+	serviceConfig = serviceConfig[0];
+
+	// create container instance for service container
+	var ServiceContainer = new Container(serviceConfig.container);
+	ServiceContainer.set('name', serviceConfig.name);
+
+	// load all serviec container dependencies
+	ServiceContainer.set('dependencies', serviceConfig.dependencies);
+	ServiceContainer.loadDependencies();
+
+	// echo start command for service container
+	return ServiceContainer.createRunCmd();
+}

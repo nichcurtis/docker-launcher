@@ -1,0 +1,15 @@
+{
+    "volume": false,
+    "link": "postgres",
+    "flags": [
+        "-d"
+    ],
+    "env":   [],
+    "image": "postgres",
+    "ready": [
+
+    ],
+    "post": [
+        "psql -U postgres -c 'CREATE DATABASE my_db'",
+    ]
+}

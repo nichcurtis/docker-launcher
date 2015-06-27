@@ -1,0 +1,19 @@
+{
+    "name": "micro-service",
+    "alias": "example",
+    "version": "0.1.0",
+
+    "container": {
+        "volume": "$(pwd)",
+        "root":   "/src",
+        "image":  "ubuntu",
+        "flags":  ["--rm", "-ti"],
+        "env":    []
+    },
+    "dependencies": {
+        "postgres": {
+            "port": "5432:5432",
+            "link": "postgres"
+        }
+    }
+}

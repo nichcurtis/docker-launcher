@@ -1,6 +1,7 @@
 node_modules
 coverage
-services
+services/private-*.json
+services/containers/private-*.json
 
 .npmrc
 .editorconfig
