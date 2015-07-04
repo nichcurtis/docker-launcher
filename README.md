@@ -1,23 +1,24 @@
 # docker-launcher
 
+````
 > Launch docker containers from configurable json files.
 >
->   Usage
+> Usage
 >
->   -l, --launch              Launch a container. Requires -s flag.
->   -s, --service <string>    Name of service to deploy.
->   -c, --config <string>     Override configuration directory.
->   -v, --volume <string>     Override service configuration value for volume.
->   -q, --silent              Suppress logging
->   --help                    Print usage instructions
-> For more information, visit http://docker-launch.22u.io
-
+> -l, --launch              Launch a container.
+> -q, --silent              Suppress all logging and only output service container run command
+> -s, --service <string>    Name of service to deploy defaults to name of current directory
+> -v, --volume <string>     Override service configuration value for volume.
+> -c, --config <string>     Set docker launcher service config directory, defaults to ./containers in docker-launcher install directory.
+> --help                    Print usage instructions
+>   For more information, visit http://docker-launch.22u.io
 ````
 
 # Install
 
-````shell
-npm install -g 22u/docker-launcher
+````
+git clone git@github.com:22u/docker-launcher.git
+cd docker-launcher && npm install && npm link
 ````
 
 # Setup
@@ -82,7 +83,7 @@ npm install -g 22u/docker-launcher
 
 - Get docker run command for current dir. Directory name must match the service name or alias.
 
-`dl -l`
+`dl --launch`
 
 - Get docker run command. `-s` must match a service name or alias. Current directory will be mounted to the service container root.
 
