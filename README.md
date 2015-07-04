@@ -6,6 +6,7 @@
 >
 >   -l, --launch              Launch a container. Requires -s flag.
 >   -s, --service <string>    Name of service to deploy.
+>   -c, --config <string>     Override configuration directory.
 >   -v, --volume <string>     Override service configuration value for volume.
 >   -q, --silent              Suppress logging
 >   --help                    Print usage instructions
@@ -16,8 +17,7 @@
 # Install
 
 ````shell
-npm install
-npm link
+npm install -g 22u/docker-launcher
 ````
 
 # Setup
@@ -26,88 +26,88 @@ npm link
 
 ````js
 {
-    "name": "micro-service",
-    "alias": "ms", // alias, can be used with -s
+    "name": "wordpress",
+    "alias": "wp",
     "version": "0.1.0",
 
     "container": {
-        "volume": "$(pwd)", // false if no shared volume, otherwise path to volume
-        "root":   "/src", // working dir and volume mapping folder
-        "image":  "ubuntu", // docker image
-        "flags":  [
-            // additional flags to add to the docker run command
-            "--rm",
-            "-ti"
+        "volume": false,
+        "root"  : false,
+        "image" : "wordpress",
+        "flags" : [
+            "--rm", "-ti", "-p 80:80"
         ],
-        "env":    []
+        "env":    [
+            "WORDPRESS_DB_PASSWORD=password"
+        ]
     },
     "dependencies": {
-        // containers to load before starting the service container
-        // key corresponds to the container alias and file containers/alias.json
-        "postgres": {
-            // override any of the container configuration settings
-            "port": "5432:5432",
-            "link": "postgres"
+        "mysql": {
+            "env": [
+                "MYSQL_ROOT_PASSWORD=password"
+            ],
+            "port": "3306:3306",
+            "link": "mysql"
         }
     }
 }
 ````
 
-- create a service config for each dependency in services/containers/DEPENDENCY_ALIAS.json
+- create a service config for each dependency in containers/dependencies/DEPENDENCY.json
 
 ````js
 {
-    "volume": false, // false if no shared volume, otherwise path to volume
-    "link": "postgres", // alias to use when linking with other containers
-    "port": "5432:5432", // port mapping values
+    "volume": false,
+    "link": "mysql",
+    "image": "mysql",
     "flags": [
-        // additional flags to add to the docker run command
         "-d"
     ],
     "env":   [
-        // environment variables to set on the container
-        "SQL_USER=postgres",
-        "SQL_HOST=postgres"
+        "MYSQL_ROOT_PASSWORD=password"
     ],
-    "image": "postgres", // docker image
     "ready": [
-        // containers to run after creation, before moving on
-        // command must return false if not ready and true if ready
+        {
+            "execute" : "mysql",
+            "expect"  : "ERROR 1045 (28000): Access denied for user 'root'@'localhost' (using password: NO)"
+        }
     ],
     "post": [
-        // commands to run after in docker container is ready
-        "psql -U postgres -c 'CREATE DATABASE my-db'",
-    ],
-    "after": [
-        // commands to run via host cli after container is setup
+        
     ]
 }
 ````
 
 # Usage
 
-- Get docker run command for current dir. Directory name must match the service name or alias. Current directory will be mounted to the service container root.
+- Get docker run command for current dir. Directory name must match the service name or alias.
 
-````shell
-dl -l
-````
+`dl -l`
 
 - Get docker run command. `-s` must match a service name or alias. Current directory will be mounted to the service container root.
 
-````shell
-dl -l -s micro-service
-````
+`dl -l -s micro-service`
 
 - Get docker run command, and mount a different folder other than the current working dir.
 
-````shell
-dl -l -s micro-service -v /path/to/my/volume
-````
+`dl -l -s micro-service -v /path/to/my/volume`
 
 - Run silently and execute final docker cmd. This will get you directly in a bash session on your service container.
 
-````shell
+````
 $(dl -l -q)
 $(dl -l -q -s micro-service)
 $(dl -l -q -v /path/to/my/volume)
 ````
+
+# License
+
+The MIT License (MIT)
+
+Copyright (c) 2015 22u, LLC
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
