@@ -1,0 +1,26 @@
+{
+    "name": "wordpress",
+    "alias": "wp",
+    "version": "0.1.0",
+
+    "container": {
+        "volume": false,
+        "root"  : false,
+        "image" : "wordpress",
+        "flags" : [
+        	"--rm", "-ti", "-p 80:80"
+        ],
+        "env":    [
+        	"WORDPRESS_DB_PASSWORD=password"
+        ]
+    },
+    "dependencies": {
+        "mysql": {
+            "env": [
+        		"MYSQL_ROOT_PASSWORD=password"
+            ],
+            "port": "3306:3306",
+            "link": "mysql"
+        }
+    }
+}

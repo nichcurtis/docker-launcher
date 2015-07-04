@@ -1,0 +1,20 @@
+{
+    "volume": false,
+    "link": "mysql",
+    "image": "mysql",
+    "flags": [
+        "-d"
+    ],
+    "env":   [
+		"MYSQL_ROOT_PASSWORD=password"
+    ],
+    "ready": [
+    	{
+    		"execute" : "mysql",
+    		"expect"  : "ERROR 1045 (28000): Access denied for user 'root'@'localhost' (using password: NO)"
+    	}
+    ],
+    "post": [
+        
+    ]
+}
