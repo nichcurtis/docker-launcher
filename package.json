@@ -1,15 +1,16 @@
 {
-  "name": "docker-launcher",
-  "version": "1.0.0",
+  "name": "@22u/docker-launcher",
+  "version": "0.1.0",
   "description": "Node cli application for launching docker containers.",
   "main": "index.js",
   "dependencies": {
+    "bluebird": "^2.9.32",
     "command-line-args": "^0.5.9",
     "fs": "0.0.2",
     "lodash": "^3.7.0",
-    "prompt": "^0.2.14",
     "shelljs": "^0.5.1",
-    "sleep": "^2.0.0"
+    "sleep": "^2.0.0",
+    "winston": "^1.0.1"
   },
   "devDependencies": {},
   "scripts": {
@@ -25,9 +26,8 @@
     "service",
     "shipping"
   ],
-  "author": "Nicholas Curtis (22u, llc)",
-  "license": "Private",
-  "private": true,
+  "author": "22u, llc",
+  "license": "MIT",
   "preferGlobal": true,
   "bin": {
     "dl": "index.js"
