@@ -8,15 +8,17 @@ var cliArgs = require('command-line-args');
 var shell = require('shelljs');
 var fs = Promise.promisifyAll(require('fs'));
 
+var winston = require('./lib/logger');
+
 var Container = require('./lib/container');
 
 /* define the command-line options */
 var cli = cliArgs([
-	{name: 'launch', type: Boolean, alias: 'l', description: 'Launch a container. Requires -s flag.'},
-	{name: 'service', type: String, alias: 's', description: 'Name of service to deploy.'},
+	{name: 'launch', type: Boolean, alias: 'l', description: 'Launch a container.'},
+	{name: 'silent', type: Boolean, alias: 'q', description: 'Suppress all logging and only output service container run command'},
+	{name: 'service', type: String, alias: 's', description: 'Name of service to deploy defaults to name of current directory'},
 	{name: 'volume', type: String, alias: 'v', description: 'Override service configuration value for volume.'},
-	{name: 'silent', type: Boolean, alias: 'q', description: 'Suppress logging'},
-	{name: 'config', type: String, alias: 'c', description: 'Set docker launcher service config dir.'},
+	{name: 'config', type: String, alias: 'c', description: 'Set docker launcher service config directory, defaults to ./containers in docker-launcher install directory.'},
 	{name: 'help', type: Boolean, description: 'Print usage instructions'}
 ]);
 
@@ -30,24 +32,24 @@ var usage = cli.getUsage({
 try {
 	var cliOptions = cli.parse();
 } catch (err) {
-	console.log(err);
+	winston.warn(err.message);
 	console.log(usage);
 	shell.exit(1);
 }
 
 // verify dependencies
 if (!shell.which('git')) {
-	console.log('Sorry, this script requires git');
+	winston.warn('Sorry, this script requires git');
 	shell.exit(1);
 }
 
 if (!shell.which('docker')) {
-	console.log('Sorry, this script requires docker');
+	winston.warn('Sorry, this script requires docker');
 	shell.exit(1);
 }
 
 if (cliOptions.help) {
-	console.log(usage);
+	winston.info(usage);
 	shell.exit(1);
 } else {
 	if (cliOptions.launch) {
@@ -64,7 +66,7 @@ var configDir;
 if (cliOptions.config) {
 	configDir = cliOptions.config;
 } else {
-	configDir = path.join(__dirname, 'services');
+	configDir = path.join(__dirname, 'containers');
 }
 setup();
 
@@ -110,13 +112,13 @@ function launchServiceFromConfig(serviceConfigObjects) {
 		serviceConfig = _.where(serviceConfigObjects, {'alias': cliOptions.service.trim()});
 
 		if (!serviceConfig || serviceConfig.length <= 0) {
-			console.log('Can not find configuration file for service: ' + cliOptions.service);
+			winston.warn('Can not find configuration file for service: ' + cliOptions.service);
 			shell.exit(1);
 		}
 	}
 
 	if (serviceConfig.length > 1) {
-		console.log('Multiple services matching name: ', _.pluck(serviceConfig, 'name'));
+		winston.warn('Multiple services matching name: ', _.pluck(serviceConfig, 'name'));
 		shell.exit(1);
 	}
 
